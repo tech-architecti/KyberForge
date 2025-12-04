@@ -2,7 +2,7 @@
 
 source ./.env
 
-docker_network="$PROJECT_NAME"_network
+docker_network="$PROJECT_NAME"-network
 
 if docker network ls --filter name=$docker_network --format '{{.Name}}' | grep -w $docker_network > /dev/null; then
     echo "Network '$docker_network' exists"
