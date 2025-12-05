@@ -1,11 +1,14 @@
 import asyncio
 import logging
+import time
 from abc import ABC
 from contextlib import contextmanager
-from typing import Dict, Optional, ClassVar, Type, Any
+from typing import Dict, Optional, ClassVar, Type, Any, AsyncIterator
 
 from dotenv import load_dotenv
+from opentelemetry.sdk.trace import Span
 
+from core.langfuse_config import LangfuseConfig
 from core.nodes.base import Node
 from core.nodes.router import BaseRouter
 from core.schema import WorkflowSchema, NodeConfig
@@ -51,6 +54,7 @@ class Workflow(ABC):
         self.validator = WorkflowValidator(self.workflow_schema)
         self.validator.validate()
         self.nodes: Dict[Type[Node], NodeConfig] = self._initialize_nodes()
+        self.tracer = LangfuseConfig.get_tracer()
         load_dotenv()
 
     @contextmanager
@@ -115,6 +119,71 @@ class Workflow(ABC):
         Use this when you want to run the workflow in an active event loop for example in a FastAPI endpoint, or Jupyter Notebook.
         """
         return await self.__run(event)
+
+    async def run_stream_async(self, event: Any) -> AsyncIterator[Dict[str, Any]]:
+        """Executes the workflow with streaming support, yielding events as they occur."""
+        task_context = TaskContext(event=event)
+
+        with self.tracer.start_as_current_span(
+            self.__class__.__name__
+        ) as workflow_span:
+            try:
+                logging.info("Starting workflow streaming execution")
+
+                # Parse the raw event to the Pydantic schema defined in the WorkflowSchema
+                task_context.event = self.workflow_schema.event_schema(**event)
+                logging.info(
+                    f"Parsed event with schema: {self.workflow_schema.event_schema.__name__}"
+                )
+
+                task_context.metadata["nodes"] = self.nodes
+                task_context.metadata["reasoning_texts"] = []
+                task_context.metadata["workflow_start_time"] = time.time()
+                current_node_class = self.workflow_schema.start
+                logging.info(f"Starting with node: {current_node_class.__name__}")
+
+                self._set_span_input(workflow_span, task_context)
+                while current_node_class:
+                    if task_context.should_stop:
+                        logging.info("Stopping workflow execution")
+                        break
+
+                    current_node = self.nodes[current_node_class].node
+                    node_name = current_node_class.__name__
+
+                    with self.tracer.start_as_current_span(
+                        current_node_class.__name__
+                    ) as node_span:
+                        self._set_span_input(node_span, task_context)
+                        with self.node_context(node_name):
+                            if not issubclass(current_node, BaseRouter):
+                                node_instance = current_node(task_context=task_context)
+                                logging.info(f"Node instance created: {node_name}")
+
+                                if hasattr(node_instance, "process_stream"):
+                                    async for (
+                                        stream_event
+                                    ) in node_instance.process_stream(task_context):
+                                        yield stream_event
+
+                                else:
+                                    task_context = await node_instance.process(
+                                        task_context
+                                    )
+                            self._set_span_output(
+                                node_span, task_context, current_node_class
+                            )
+
+                    current_node_class = await self._get_next_node_class(
+                        current_node_class, task_context
+                    )
+                self._set_span_output(workflow_span, task_context)
+                task_context.metadata.pop("nodes", None)
+
+            except Exception as e:
+                logging.error(f"Error in workflow execution: {str(e)}", exc_info=True)
+                yield {"type": "error", "error": str(e)}
+                raise
 
     async def __run(self, event: Any) -> TaskContext:
         """Executes the workflow for a given event.
@@ -193,3 +262,22 @@ class Workflow(ABC):
         """
         next_node = router.route(task_context)
         return next_node.__class__ if next_node else None
+
+    def _set_span_input(self, span: Span, task_context: TaskContext):
+        span.set_attribute(
+            "input", task_context.model_dump_json(exclude={"metadata": {"nodes"}})
+        )
+
+    def _set_span_output(
+        self,
+        span: Span,
+        task_context: TaskContext,
+        current_node_class: Type[Node] = None,
+    ):
+        if current_node_class:
+            value = task_context.model_dump_json(
+                include={"nodes": {current_node_class.__name__}}
+            )
+        else:
+            value = task_context.model_dump_json(exclude={"metadata": {"nodes"}})
+        span.set_attribute("output", value)
