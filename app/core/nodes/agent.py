@@ -2,7 +2,7 @@ import os
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from enum import Enum
-from typing import Type, Optional, Union, Any, Sequence
+from typing import Type, Optional, Union, Any, Sequence, AsyncIterator, Dict
 
 import boto3
 from dotenv import load_dotenv
@@ -10,21 +10,23 @@ from google.oauth2 import service_account
 from httpx import AsyncClient
 from openai import AsyncAzureOpenAI
 from pydantic import BaseModel
-from pydantic_ai import Agent, Tool
-from pydantic_ai.mcp import MCPServer
+from pydantic_ai import Agent
+from pydantic_ai.builtin_tools import AbstractBuiltinTool
 from pydantic_ai.models import Model
 from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelName
 from pydantic_ai.models.bedrock import BedrockConverseModel, BedrockModelName
 from pydantic_ai.models.gemini import GeminiModelName
 from pydantic_ai.models.google import GoogleModel
-from pydantic_ai.models.instrumented import InstrumentationSettings
-from pydantic_ai.models.openai import OpenAIModelName, OpenAIChatModel
+from pydantic_ai.models.openai import (
+    OpenAIModelName,
+    OpenAIChatModel,
+    OpenAIResponsesModel,
+)
 from pydantic_ai.providers.anthropic import AnthropicProvider
 from pydantic_ai.providers.bedrock import BedrockProvider
 from pydantic_ai.providers.google import GoogleProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
-from pydantic_ai.tools import AgentDepsT, ToolFuncEither
 
 from core.nodes.base import Node
 from core.task import TaskContext
@@ -44,47 +46,6 @@ class ModelProvider(str, Enum):
 
 @dataclass
 class AgentConfig:
-    """PydanticAI Agent wrapper.
-
-    Attributes:
-        model_provider: Specifies which model provider to use for this agent.
-            Supported providers include OpenAI, Azure OpenAI, Anthropic, Gemini, Ollama, and Bedrock.
-            The provider you choose determines which set of model names are valid for this agent.
-        model_name: The name of the model to use with the specified provider.
-            The value should be a model name type that matches the selected model_provider, such as `OpenAIModelName`,
-            `AnthropicModelName`, `GeminiModelName`, or `BedrockModelName`.
-            This field selects the exact large language model to run your requests with.
-        output_type: The type of the output data, used to validate the data returned by the model,
-            defaults to `str`.
-        instructions: Instructions to use for this agent, you can also register instructions via a function with
-            [`instructions`][pydantic_ai.Agent.instructions].
-        system_prompt: Static system prompts to use for this agent, you can also register system
-            prompts via a function with [`system_prompt`][pydantic_ai.Agent.system_prompt].
-        deps_type: The type used for dependency injection, this parameter exists solely to allow you to fully
-            parameterize the agent, and therefore get the best out of static type checking.
-            If you're not using deps, but want type checking to pass, you can set `deps=None` to satisfy Pyright
-            or add a type hint `: Agent[None, <return type>]`.
-        name: The name of the agent, used for logging. If `None`, we try to infer the agent name from the call frame
-            when the agent is first run.
-        model_settings: Optional model request settings to use for this agent's runs, by default.
-        retries: The default number of retries to allow before raising an error.
-        output_retries: The maximum number of retries to allow for result validation, defaults to `retries`.
-        tools: Tools to register with the agent, you can also register tools via the decorators
-            [`@agent.tool`][pydantic_ai.Agent.tool] and [`@agent.tool_plain`][pydantic_ai.Agent.tool_plain].
-        prepare_tools: custom method to prepare the tool definition of all tools for each step.
-            This is useful if you want to customize the definition of multiple tools or you want to register
-            a subset of tools for a given step. See [`ToolsPrepareFunc`][pydantic_ai.tools.ToolsPrepareFunc]
-        mcp_servers: MCP servers to register with the agent. You should register a [`MCPServer`][pydantic_ai.mcp.MCPServer]
-            for each server you want the agent to connect to.
-        instrument: Set to True to automatically instrument with OpenTelemetry,
-            which will use Logfire if it's configured.
-            Set to an instance of [`InstrumentationSettings`][pydantic_ai.agent.InstrumentationSettings] to customize.
-            If this isn't set, then the last value set by
-            [`Agent.instrument_all()`][pydantic_ai.Agent.instrument_all]
-            will be used, which defaults to False.
-            See the [Debugging and Monitoring guide](https://ai.pydantic.dev/logfire/) for more info.
-    """
-
     model_provider: ModelProvider
     model_name: Union[
         OpenAIModelName, AnthropicModelName, GeminiModelName, BedrockModelName
@@ -97,9 +58,9 @@ class AgentConfig:
     model_settings: ModelSettings | None = None
     retries: int = 1
     output_retries: int | None = None
-    tools: Sequence[Tool[AgentDepsT] | ToolFuncEither[AgentDepsT, ...]] = ()
-    mcp_servers: Sequence[MCPServer] = ()
-    instrument: InstrumentationSettings | bool | None = None
+    tools: Sequence = ((),)
+    builtin_tools: Sequence[AbstractBuiltinTool] = ((),)
+    instrument: bool = False
 
 
 class AgentNode(Node, ABC):
@@ -127,7 +88,7 @@ class AgentNode(Node, ABC):
             retries=agent_wrapper.retries,
             output_retries=agent_wrapper.output_retries,
             tools=agent_wrapper.tools,
-            mcp_servers=agent_wrapper.mcp_servers,
+            builtin_tools=(),
             instrument=agent_wrapper.instrument,
         )
 
@@ -157,13 +118,16 @@ class AgentNode(Node, ABC):
                 return self.__get_google_vertex_ai_model(model_name)
 
     def __get_openai_model(self, model_name) -> Model:
-        return OpenAIChatModel(model_name=model_name)
+        return OpenAIResponsesModel(model_name=model_name)
 
     def __get_azure_openai_model(self, model_name) -> Model:
         client = AsyncAzureOpenAI(
-            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2025-03-01-preview")
         )
-        return OpenAIChatModel(
+        if not model_name:
+            model_name = "gpt-5-mini"
+
+        return OpenAIResponsesModel(
             model_name=model_name,
             provider=OpenAIProvider(openai_client=client),
         )
