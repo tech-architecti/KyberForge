@@ -19,6 +19,7 @@ class Node(ABC):
         """
         OutputType class for representing structured outputs for Nodes.
         """
+
         pass
 
     def __init__(self, task_context: TaskContext = None):
