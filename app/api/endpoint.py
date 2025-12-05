@@ -4,8 +4,9 @@ from typing import Dict
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from starlette.responses import Response
+from starlette.responses import Response, StreamingResponse
 
+from api.event_stream_generator import event_stream_generator
 from worker.config import celery_app
 from database.event import Event
 from database.repository import GenericRepository
@@ -14,26 +15,20 @@ from database.session import db_session
 from schemas.placeholder_schema import PlaceholderEventSchema
 from workflows.workflow_registry import WorkflowRegistry
 
-"""
-Event Submission Endpoint Module
-
-This module defines the primary FastAPI endpoint for event ingestion.
-It implements the initial handling of incoming events by:
-1. Validating the incoming event data
-2. Persisting the event to the database
-3. Queuing an asynchronous processing task
-4. Returning an acceptance response
-
-The endpoint follows the "accept-and-delegate" pattern where:
-- Events are immediately accepted if valid
-- Processing is handled asynchronously via Celery
-- A 202 Accepted response indicates successful queueing
-
-This pattern ensures high availability and responsiveness of the API
-while allowing for potentially long-running processing operations.
-"""
-
 router = APIRouter()
+
+
+@router.post("/streaming")
+async def handle_chat_completion_streaming() -> StreamingResponse:
+    return StreamingResponse(
+        event_stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/", dependencies=[])
