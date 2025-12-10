@@ -7,20 +7,26 @@ from sqlalchemy.orm import Session
 from starlette.responses import Response, StreamingResponse
 
 from api.event_stream_generator import event_stream_generator
-from worker.config import celery_app
 from database.event import Event
 from database.repository import GenericRepository
 from database.session import db_session
-
+from schemas.streaming_schema import StreamingSchema
+from worker.config import celery_app
+from workflows.streaming_workflow import StreamingWorkflow
 from workflows.workflow_registry import WorkflowRegistry
 
 router = APIRouter()
 
 
 @router.post("/streaming")
-async def handle_chat_completion_streaming() -> StreamingResponse:
+async def handle_chat_completion_streaming(
+        data: StreamingSchema
+) -> StreamingResponse:
+    workflow = StreamingWorkflow()
+    workflow_stream = workflow.run_stream_async(data.model_dump())
+
     return StreamingResponse(
-        event_stream_generator(),
+        event_stream_generator(workflow_stream),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -32,8 +38,8 @@ async def handle_chat_completion_streaming() -> StreamingResponse:
 
 @router.post("/", dependencies=[])
 def handle_event(
-    data: Any,
-    session: Session = Depends(db_session),
+        data: Any,
+        session: Session = Depends(db_session),
 ) -> Response:
     """Handles incoming event submissions.
 

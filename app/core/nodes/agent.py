@@ -2,7 +2,7 @@ import os
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from enum import Enum
-from typing import Type, Optional, Union, Any, Sequence, AsyncIterator, Dict
+from typing import Type, Optional, Union, Any, Sequence
 
 import boto3
 from dotenv import load_dotenv
@@ -17,6 +17,7 @@ from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelName
 from pydantic_ai.models.bedrock import BedrockConverseModel, BedrockModelName
 from pydantic_ai.models.gemini import GeminiModelName
 from pydantic_ai.models.google import GoogleModel
+from pydantic_ai.models.mistral import MistralModel
 from pydantic_ai.models.openai import (
     OpenAIModelName,
     OpenAIChatModel,
@@ -42,6 +43,7 @@ class ModelProvider(str, Enum):
     BEDROCK = "bedrock"
     GOOGLE_GEMINI = "google"
     GOOGLE_VERTEX_AI = "google_vertex_ai"
+    MISTRAL = "mistral"
 
 
 @dataclass
@@ -81,15 +83,15 @@ class AgentNode(Node, ABC):
             ),
             output_type=agent_wrapper.output_type,
             instructions=agent_wrapper.instructions,
-            system_prompt=agent_wrapper.system_prompt,
+            # system_prompt=agent_wrapper.system_prompt,
             deps_type=agent_wrapper.deps_type,
-            name=agent_wrapper.name,
-            model_settings=agent_wrapper.model_settings,
-            retries=agent_wrapper.retries,
-            output_retries=agent_wrapper.output_retries,
-            tools=agent_wrapper.tools,
-            builtin_tools=(),
-            instrument=agent_wrapper.instrument,
+            # name=agent_wrapper.name,
+            # model_settings=agent_wrapper.model_settings,
+            # retries=agent_wrapper.retries,
+            # output_retries=agent_wrapper.output_retries,
+            # tools=agent_wrapper.tools,
+            # builtin_tools=(),
+            # instrument=agent_wrapper.instrument,
         )
 
     @abstractmethod
@@ -116,6 +118,8 @@ class AgentNode(Node, ABC):
                 return self.__get_google_gemini_model(model_name)
             case provider.GOOGLE_VERTEX_AI.value:
                 return self.__get_google_vertex_ai_model(model_name)
+            case provider.MISTRAL.value:
+                return self.__get_mistral_model(model_name)
 
     def __get_openai_model(self, model_name) -> Model:
         return OpenAIResponsesModel(model_name=model_name)
@@ -182,3 +186,6 @@ class AgentNode(Node, ABC):
             model_name=model_name,
             provider=provider,
         )
+
+    def __get_mistral_model(self, model_name: str) -> Model:
+        return MistralModel(model_name=model_name)

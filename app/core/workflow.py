@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from opentelemetry.sdk.trace import Span
 
 from core.langfuse_config import LangfuseConfig
+from core.nodes.agent_streaming_node import AgentStreamingNode
 from core.nodes.base import Node
 from core.nodes.router import BaseRouter
 from core.schema import WorkflowSchema, NodeConfig
@@ -160,10 +161,11 @@ class Workflow(ABC):
                                 node_instance = current_node(task_context=task_context)
                                 logging.info(f"Node instance created: {node_name}")
 
-                                if hasattr(node_instance, "process_stream"):
+                                if isinstance(node_instance, AgentStreamingNode):
+                                # if hasattr(node_instance, "process_stream"):
                                     async for (
                                         stream_event
-                                    ) in node_instance.process_stream(task_context):
+                                    ) in node_instance.process(task_context):
                                         yield stream_event
 
                                 else:

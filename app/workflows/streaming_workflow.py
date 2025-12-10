@@ -1,13 +1,13 @@
 from core.schema import WorkflowSchema, NodeConfig
 from core.workflow import Workflow
-from schemas.placeholder_schema import PlaceholderEventSchema
+from schemas.streaming_schema import StreamingSchema
 from workflows.streaming_workflow_nodes.streaming_node import StreamingNode
 
 
-class PlaceholderWorkflow(Workflow):
+class StreamingWorkflow(Workflow):
     workflow_schema = WorkflowSchema(
         description="",
-        event_schema=PlaceholderEventSchema,
+        event_schema=StreamingSchema,
         start=StreamingNode,
         nodes=[
             NodeConfig(
