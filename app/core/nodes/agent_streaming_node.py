@@ -31,6 +31,15 @@ class AgentStreamingNode(AgentNode, ABC):
             previous_text = text_chunk
             yield self.completion_chunk(delta_text)
 
+    async def stream_structured_deltas(self,
+                                       stream_result,
+                                       debounce_by: float = 0.01,
+
+                                       ):
+        async for chunk in stream_result.stream(debounce_by=debounce_by):
+            if chunk.model_dump():
+                yield self.completion_chunk(chunk.model_dump())
+
     @staticmethod
     def completion_chunk(content: str) -> dict:
         return {
