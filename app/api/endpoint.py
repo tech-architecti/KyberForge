@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Dict
+from typing import Dict, Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -12,7 +12,6 @@ from database.event import Event
 from database.repository import GenericRepository
 from database.session import db_session
 
-from schemas.placeholder_schema import PlaceholderEventSchema
 from workflows.workflow_registry import WorkflowRegistry
 
 router = APIRouter()
@@ -33,7 +32,7 @@ async def handle_chat_completion_streaming() -> StreamingResponse:
 
 @router.post("/", dependencies=[])
 def handle_event(
-    data: PlaceholderEventSchema,
+    data: Any,
     session: Session = Depends(db_session),
 ) -> Response:
     """Handles incoming event submissions.
