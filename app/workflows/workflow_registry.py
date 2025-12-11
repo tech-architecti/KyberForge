@@ -3,4 +3,5 @@ from enum import Enum
 
 class WorkflowRegistry(Enum):
     PLACEHOLDER = "placeholder"
-    STREAMING_EXAMPLE_WORKFLOW = "streaming_workflow"
+    EXAMPLE_STREAMING_WORKFLOW = "streaming_workflow"
+    EXAMPLE_CUSTOMER_CARE_WORKFLOW = "example_customer_care_workflow"

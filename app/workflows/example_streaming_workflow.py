@@ -1,10 +1,10 @@
 from core.schema import WorkflowSchema, NodeConfig
 from core.workflow import Workflow
 from schemas.openai_schema import OpenAIChatSchema
-from workflows.streaming_example_workflow_nodes.structured_streaming_node import (
+from workflows.example_streaming_workflow_nodes.structured_streaming_node import (
     StructuredStreamingNode,
 )
-from workflows.streaming_example_workflow_nodes.text_streaming_node import (
+from workflows.example_streaming_workflow_nodes.text_streaming_node import (
     TextStreamingNode,
 )
 

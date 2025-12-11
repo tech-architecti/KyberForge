@@ -3,7 +3,7 @@ from starlette.responses import StreamingResponse
 
 from schemas.openai_schema import OpenAIChatSchema
 from utils.event_stream_generator import event_stream_generator
-from workflows.streaming_example_workflow import StreamingExampleWorkflow
+from workflows.example_streaming_workflow import StreamingExampleWorkflow
 
 router = APIRouter()
 

@@ -20,26 +20,27 @@ BASE_URL = "http://localhost:8080/events"
 EVENTS_DIR = Path(__file__).parent.parent / "requests/events"
 
 
-def load_event(event_file: str):
+def load_event(event_directory: str, event_file: str):
     """Load event data from JSON file.
 
     Args:
+        event_directory: Name of the event directory
         event_file: Name of the JSON file in the events directory
 
     Returns:
         Dict containing the event data
     """
-    with open(EVENTS_DIR / event_file, "r") as f:
+    with open(EVENTS_DIR / event_directory /event_file, "r") as f:
         return json.load(f)
 
 
-def send_event(event_file: str):
+def send_event(event_directory: str, event_file: str):
     """Send event to the API endpoint for processing.
 
     Args:
         event_file: Name of the JSON file to send
     """
-    payload = load_event(event_file)
+    payload = load_event(event_directory, event_file)
     response = requests.post(BASE_URL, json=payload)
 
     print(f"Testing {event_file}:")
@@ -50,4 +51,4 @@ def send_event(event_file: str):
 
 
 if __name__ == "__main__":
-    send_event(event_file="placeholder_event.json")
+    send_event(event_directory="example_customer_care", event_file="invoice.json")
