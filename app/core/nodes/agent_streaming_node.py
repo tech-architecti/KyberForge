@@ -40,8 +40,7 @@ class AgentStreamingNode(AgentNode, ABC):
             if chunk.model_dump():
                 yield self.completion_chunk(chunk.model_dump())
 
-    @staticmethod
-    def completion_chunk(content: str) -> dict:
+    def completion_chunk(self, content: str) -> dict:
         return {
             "object": "chat.completion.chunk",
             "model": "default",
