@@ -1,7 +1,9 @@
 from enum import Enum
 
+from workflows.example_customer_care_workflow import ExampleCustomerCareWorkflow
+from workflows.example_streaming_workflow import ExampleStreamingWorkflow
+
 
 class WorkflowRegistry(Enum):
-    PLACEHOLDER = "placeholder"
-    EXAMPLE_STREAMING_WORKFLOW = "streaming_workflow"
-    EXAMPLE_CUSTOMER_CARE_WORKFLOW = "example_customer_care_workflow"
+    EXAMPLE_STREAMING_WORKFLOW = ExampleStreamingWorkflow
+    EXAMPLE_CUSTOMER_CARE_WORKFLOW = ExampleCustomerCareWorkflow

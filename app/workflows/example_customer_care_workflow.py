@@ -29,7 +29,7 @@ from workflows.example_customer_care_workflow_nodes.validate_ticket_node import 
 )
 
 
-class CustomerCareWorkflow(Workflow):
+class ExampleCustomerCareWorkflow(Workflow):
     workflow_schema = WorkflowSchema(
         description="",
         event_schema=CustomerCareEventSchema,

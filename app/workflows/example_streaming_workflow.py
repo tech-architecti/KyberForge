@@ -9,7 +9,7 @@ from workflows.example_streaming_workflow_nodes.text_streaming_node import (
 )
 
 
-class StreamingExampleWorkflow(Workflow):
+class ExampleStreamingWorkflow(Workflow):
     workflow_schema = WorkflowSchema(
         description="",
         event_schema=OpenAIChatSchema,

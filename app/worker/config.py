@@ -14,7 +14,7 @@ def get_redis_url():
         str: The Redis URL.
     """
     redis_host = f"{os.getenv('PROJECT_NAME')}_redis"
-    return f"redis://{redis_host}:6379/0"
+    return f"redis://redis:6379/0"
 
 
 def get_celery_config():
