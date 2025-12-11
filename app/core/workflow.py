@@ -209,28 +209,52 @@ class Workflow(ABC):
         """
         task_context = TaskContext(event=event)
 
-        # Parse the raw event to the Pydantic schema defined in the WorkflowSchema
-        task_context.event = self.workflow_schema.event_schema(**event)
+        with self.langfuse.start_as_current_observation(
+            as_type="span",
+            name=self.__class__.__name__
+        ) as workflow_span:
+            try:
+                # Parse the raw event to the Pydantic schema defined in the WorkflowSchema
+                task_context.event = self.workflow_schema.event_schema(**event)
+                workflow_span.update(input=event)
 
-        task_context.metadata["nodes"] = self.nodes
-        current_node_class = self.workflow_schema.start
+                task_context.metadata["nodes"] = self.nodes
+                current_node_class = self.workflow_schema.start
 
-        while current_node_class:
-            if task_context.should_stop:
-                logging.info("Stopping workflow execution")
-                break
-            current_node = self.nodes[current_node_class].node
-            with self.node_context(current_node_class.__name__):
-                if not issubclass(current_node, BaseRouter):
-                    task_context = await current_node(
-                        task_context=task_context
-                    ).process(task_context)
+                while current_node_class:
+                    if task_context.should_stop:
+                        logging.info("Stopping workflow execution")
+                        break
 
-            current_node_class = await self._get_next_node_class(
-                current_node_class, task_context
-            )
-        task_context.metadata.pop("nodes")
-        return task_context
+                    current_node = self.nodes[current_node_class].node
+                    node_name = current_node_class.__name__
+
+                    with self.langfuse.start_as_current_observation(
+                        as_type="span",
+                        name=node_name
+                    ) as node_span:
+                        node_span.update(input=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+
+                        with self.node_context(node_name):
+                            if not issubclass(current_node, BaseRouter):
+                                task_context = await current_node(
+                                    task_context=task_context
+                                ).process(task_context)
+
+                        node_span.update(output=task_context.model_dump(include={"nodes": {node_name}}))
+
+                    current_node_class = await self._get_next_node_class(
+                        current_node_class, task_context
+                    )
+
+                workflow_span.update(output=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+                task_context.metadata.pop("nodes")
+                return task_context
+
+            except Exception as e:
+                logging.error(f"Error in workflow execution: {str(e)}", exc_info=True)
+                workflow_span.update(level="ERROR", status_message=str(e))
+                raise
 
     async def _get_next_node_class(
             self, current_node_class: Type[Node], task_context: TaskContext
