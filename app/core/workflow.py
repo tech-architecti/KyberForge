@@ -138,7 +138,6 @@ class Workflow(ABC):
                 )
 
                 task_context.metadata["nodes"] = self.nodes
-                task_context.metadata["reasoning_texts"] = []
                 task_context.metadata["workflow_start_time"] = time.time()
                 current_node_class = self.workflow_schema.start
                 logging.info(f"Starting with node: {current_node_class.__name__}")

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from starlette.responses import StreamingResponse
 
-from schemas.openai_schema import OpenaiChatSchema
+from schemas.openai_schema import OpenAIChatSchema
 from utils.event_stream_generator import event_stream_generator
 from workflows.streaming_example_workflow import StreamingExampleWorkflow
 
@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.post("/chat/completions", dependencies=[])
-async def handle_chat_completion_streaming(data: OpenaiChatSchema) -> StreamingResponse:
+async def handle_chat_completion_streaming(data: OpenAIChatSchema) -> StreamingResponse:
     workflow = StreamingExampleWorkflow()
     workflow_stream = workflow.run_stream_async(data.model_dump())
 

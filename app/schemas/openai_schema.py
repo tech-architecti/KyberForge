@@ -9,7 +9,7 @@ class Message(BaseModel):
     role: str
 
 
-class OpenaiChatSchema(BaseModel):
+class OpenAIChatSchema(BaseModel):
     messages: List[Message]
     model: str
 

@@ -3,7 +3,7 @@ from typing import AsyncIterator, Dict, Any
 from core.nodes.agent import AgentConfig, ModelProvider
 from core.nodes.agent_streaming_node import AgentStreamingNode
 from core.task import TaskContext
-from schemas.streaming_example_schema import StreamingExampleSchema
+from schemas.openai_schema import OpenAIChatSchema
 
 
 class TextStreamingNode(AgentStreamingNode):
@@ -15,7 +15,7 @@ class TextStreamingNode(AgentStreamingNode):
         )
 
     async def process(self, task_context: TaskContext) -> AsyncIterator[Dict[str, Any]]:
-        event: StreamingExampleSchema = task_context.event
-        async with self.agent.run_stream(user_prompt=event.message) as result:
+        event: OpenAIChatSchema = task_context.event
+        async with self.agent.run_stream(user_prompt=event.get_message()) as result:
             async for chunk in self.stream_text_deltas(result):
                 yield chunk
