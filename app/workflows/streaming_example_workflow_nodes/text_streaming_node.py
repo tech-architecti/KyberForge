@@ -11,7 +11,7 @@ class TextStreamingNode(AgentStreamingNode):
         return AgentConfig(
             model_provider=ModelProvider.MISTRAL,
             model_name="mistral-small-2506",
-            output_type=str
+            output_type=str,
         )
 
     async def process(self, task_context: TaskContext) -> AsyncIterator[Dict[str, Any]]:

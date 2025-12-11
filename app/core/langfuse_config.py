@@ -21,9 +21,7 @@ class LangfuseConfig:
                 f"{os.getenv('LANGFUSE_PUBLIC_KEY')}:{os.getenv('LANGFUSE_SECRET_KEY')}".encode()
             ).decode()
 
-            langfuse_host = os.getenv(
-                "LANGFUSE_HOST"
-            )
+            langfuse_host = os.getenv("LANGFUSE_HOST")
             otlp_endpoint = f"{langfuse_host}/api/public/otel/v1/traces"
 
             trace_provider = TracerProvider()

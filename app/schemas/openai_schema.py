@@ -8,6 +8,7 @@ class Message(BaseModel):
     content: str
     role: str
 
+
 class OpenaiChatSchema(BaseModel):
     messages: List[Message]
     model: str

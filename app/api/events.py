@@ -17,8 +17,8 @@ router = APIRouter()
 
 @router.post("/", dependencies=[])
 def handle_event(
-        data: Any,
-        session: Session = Depends(db_session),
+    data: Any,
+    session: Session = Depends(db_session),
 ) -> Response:
     repository = GenericRepository(
         session=session,

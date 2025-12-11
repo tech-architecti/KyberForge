@@ -15,7 +15,7 @@ class StructuredStreamingNode(AgentStreamingNode):
         return AgentConfig(
             model_provider=ModelProvider.MISTRAL,
             model_name="mistral-small-2506",
-            output_type=self.OutputType
+            output_type=self.OutputType,
         )
 
     async def process(self, task_context: TaskContext) -> AsyncIterator[Dict[str, Any]]:

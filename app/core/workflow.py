@@ -162,10 +162,10 @@ class Workflow(ABC):
                                 logging.info(f"Node instance created: {node_name}")
 
                                 if isinstance(node_instance, AgentStreamingNode):
-                                # if hasattr(node_instance, "process_stream"):
-                                    async for (
-                                        stream_event
-                                    ) in node_instance.process(task_context):
+                                    # if hasattr(node_instance, "process_stream"):
+                                    async for stream_event in node_instance.process(
+                                        task_context
+                                    ):
                                         yield stream_event
 
                                 else:
