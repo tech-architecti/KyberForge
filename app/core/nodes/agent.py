@@ -1,17 +1,17 @@
 import os
 from abc import abstractmethod, ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Type, Optional, Union, Any, Sequence
+from typing import Type, Optional, Union, Any, List
 
 import boto3
 from dotenv import load_dotenv
+from fastmcp.server.auth.providers.azure import AzureProvider
 from google.oauth2 import service_account
 from httpx import AsyncClient
 from openai import AsyncAzureOpenAI
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.builtin_tools import AbstractBuiltinTool
 from pydantic_ai.models import Model
 from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelName
 from pydantic_ai.models.bedrock import BedrockConverseModel, BedrockModelName
@@ -26,7 +26,7 @@ from pydantic_ai.models.openai import (
 from pydantic_ai.providers.anthropic import AnthropicProvider
 from pydantic_ai.providers.bedrock import BedrockProvider
 from pydantic_ai.providers.google import GoogleProvider
-from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai.settings import ModelSettings
 
 from core.nodes.base import Node
@@ -54,15 +54,14 @@ class AgentConfig:
     ]
     output_type: Any = str
     instructions: Optional[str] = None
-    system_prompt: str | Sequence[str] = ()
     deps_type: Optional[Type[Any]] = None
     name: str | None = None
     model_settings: ModelSettings | None = None
     retries: int = 1
     output_retries: int | None = None
-    tools: Sequence = ((),)
-    builtin_tools: Sequence[AbstractBuiltinTool] = ((),)
-    instrument: bool = False
+    tools: List = field(default_factory=list)
+    builtin_tools: List = field(default_factory=list)
+    instrument: bool = True
 
 
 class AgentNode(Node, ABC):
@@ -83,15 +82,14 @@ class AgentNode(Node, ABC):
             ),
             output_type=agent_wrapper.output_type,
             instructions=agent_wrapper.instructions,
-            # system_prompt=agent_wrapper.system_prompt,
             deps_type=agent_wrapper.deps_type,
-            # name=agent_wrapper.name,
-            # model_settings=agent_wrapper.model_settings,
-            # retries=agent_wrapper.retries,
-            # output_retries=agent_wrapper.output_retries,
-            # tools=agent_wrapper.tools,
-            # builtin_tools=(),
-            # instrument=agent_wrapper.instrument,
+            name=agent_wrapper.name,
+            model_settings=agent_wrapper.model_settings,
+            retries=agent_wrapper.retries,
+            output_retries=agent_wrapper.output_retries,
+            tools=agent_wrapper.tools,
+            builtin_tools=agent_wrapper.builtin_tools,
+            instrument=agent_wrapper.instrument,
         )
 
     @abstractmethod
@@ -133,7 +131,7 @@ class AgentNode(Node, ABC):
 
         return OpenAIResponsesModel(
             model_name=model_name,
-            provider=OpenAIProvider(openai_client=client),
+            provider=AzureProvider(),
         )
 
     def __get_anthropic_model(self, model_name: AnthropicModelName) -> Model:
@@ -148,7 +146,7 @@ class AgentNode(Node, ABC):
             raise KeyError("OLLAMA_BASE_URL not set in .env")
 
         return OpenAIChatModel(
-            model_name=model_name, provider=OpenAIProvider(base_url=base_url)
+            model_name=model_name, provider=OllamaProvider(base_url=base_url)
         )
 
     def __get_bedrock_model(self, model_name: str) -> Model:

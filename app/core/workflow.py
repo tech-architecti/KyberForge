@@ -177,7 +177,11 @@ class Workflow(ABC):
                     node_name = current_node_class.__name__
 
                     with self._observation_context(node_name) as node_span:
-                        node_span.update(input=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+                        node_span.update(
+                            input=task_context.model_dump(
+                                exclude={"metadata": {"nodes"}}
+                            )
+                        )
 
                         with self.node_context(node_name):
                             if not issubclass(current_node, BaseRouter):
@@ -194,13 +198,19 @@ class Workflow(ABC):
                                         task_context
                                     )
 
-                            node_span.update(output=task_context.model_dump(include={"nodes": {node_name}}))
+                            node_span.update(
+                                output=task_context.model_dump(
+                                    include={"nodes": {node_name}}
+                                )
+                            )
 
                     current_node_class = await self._get_next_node_class(
                         current_node_class, task_context
                     )
 
-                workflow_span.update(output=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+                workflow_span.update(
+                    output=task_context.model_dump(exclude={"metadata": {"nodes"}})
+                )
                 task_context.metadata.pop("nodes", None)
 
             except Exception as e:
@@ -241,7 +251,11 @@ class Workflow(ABC):
                     node_name = current_node_class.__name__
 
                     with self._observation_context(node_name) as node_span:
-                        node_span.update(input=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+                        node_span.update(
+                            input=task_context.model_dump(
+                                exclude={"metadata": {"nodes"}}
+                            )
+                        )
 
                         with self.node_context(node_name):
                             if not issubclass(current_node, BaseRouter):
@@ -249,13 +263,19 @@ class Workflow(ABC):
                                     task_context=task_context
                                 ).process(task_context)
 
-                        node_span.update(output=task_context.model_dump(include={"nodes": {node_name}}))
+                        node_span.update(
+                            output=task_context.model_dump(
+                                include={"nodes": {node_name}}
+                            )
+                        )
 
                     current_node_class = await self._get_next_node_class(
                         current_node_class, task_context
                     )
 
-                workflow_span.update(output=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+                workflow_span.update(
+                    output=task_context.model_dump(exclude={"metadata": {"nodes"}})
+                )
                 task_context.metadata.pop("nodes")
                 return task_context
 
@@ -265,7 +285,7 @@ class Workflow(ABC):
                 raise
 
     async def _get_next_node_class(
-            self, current_node_class: Type[Node], task_context: TaskContext
+        self, current_node_class: Type[Node], task_context: TaskContext
     ) -> Optional[Type[Node]]:
         """Determines the next node to execute in the workflow.
 
@@ -291,7 +311,7 @@ class Workflow(ABC):
         return node_config.connections[0]
 
     async def _handle_router(
-            self, router: BaseRouter, task_context: TaskContext
+        self, router: BaseRouter, task_context: TaskContext
     ) -> Optional[Type[Node]]:
         """Handles routing logic for router nodes.
 

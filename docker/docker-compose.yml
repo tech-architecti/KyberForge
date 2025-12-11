@@ -1,7 +1,7 @@
 include:
   - path: ./docker-compose.launchpad.yml
-#  - path: ./docker-compose.supabase.yml
-#  - path: ./docker-compose.caddy.yml
+  - path: ./docker-compose.supabase.yml
+  - path: ./docker-compose.caddy.yml
 
 networks:
   default:
