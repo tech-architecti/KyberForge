@@ -6,7 +6,7 @@ from core.task import TaskContext
 from schemas.streaming_schema import StreamingSchema
 
 
-class StreamingNode(AgentStreamingNode):
+class StructuredStreamingNode(AgentStreamingNode):
     class OutputType(AgentStreamingNode.OutputType):
         thinking: str
         reply: str
