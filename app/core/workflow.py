@@ -7,7 +7,6 @@ from typing import Dict, Optional, ClassVar, Type, Any, AsyncIterator
 
 from dotenv import load_dotenv
 from langfuse import get_client
-from opentelemetry.sdk.trace import Span
 
 from core.exceptions import LangfuseAuthenticationError
 from core.nodes.agent_streaming_node import AgentStreamingNode
@@ -133,14 +132,16 @@ class Workflow(ABC):
         """Executes the workflow with streaming support, yielding events as they occur."""
         task_context = TaskContext(event=event)
 
-        with self.tracer.start_as_current_span(
-                self.__class__.__name__
+        with self.langfuse.start_as_current_observation(
+            as_type="span",
+            name=self.__class__.__name__
         ) as workflow_span:
             try:
                 logging.info("Starting workflow streaming execution")
 
                 # Parse the raw event to the Pydantic schema defined in the WorkflowSchema
                 task_context.event = self.workflow_schema.event_schema(**event)
+                workflow_span.update(input=event)
                 logging.info(
                     f"Parsed event with schema: {self.workflow_schema.event_schema.__name__}"
                 )
@@ -150,7 +151,6 @@ class Workflow(ABC):
                 current_node_class = self.workflow_schema.start
                 logging.info(f"Starting with node: {current_node_class.__name__}")
 
-                self._set_span_input(workflow_span, task_context)
                 while current_node_class:
                     if task_context.should_stop:
                         logging.info("Stopping workflow execution")
@@ -159,38 +159,39 @@ class Workflow(ABC):
                     current_node = self.nodes[current_node_class].node
                     node_name = current_node_class.__name__
 
-                    with self.tracer.start_as_current_span(
-                            current_node_class.__name__
+                    with self.langfuse.start_as_current_observation(
+                        as_type="span",
+                        name=node_name
                     ) as node_span:
-                        self._set_span_input(node_span, task_context)
+                        node_span.update(input=task_context.model_dump(exclude={"metadata": {"nodes"}}))
+
                         with self.node_context(node_name):
                             if not issubclass(current_node, BaseRouter):
                                 node_instance = current_node(task_context=task_context)
                                 logging.info(f"Node instance created: {node_name}")
 
                                 if isinstance(node_instance, AgentStreamingNode):
-                                    # if hasattr(node_instance, "process_stream"):
                                     async for stream_event in node_instance.process(
-                                            task_context
+                                        task_context
                                     ):
                                         yield stream_event
-
                                 else:
                                     task_context = await node_instance.process(
                                         task_context
                                     )
-                            self._set_span_output(
-                                node_span, task_context, current_node_class
-                            )
+
+                            node_span.update(output=task_context.model_dump(include={"nodes": {node_name}}))
 
                     current_node_class = await self._get_next_node_class(
                         current_node_class, task_context
                     )
-                self._set_span_output(workflow_span, task_context)
+
+                workflow_span.update(output=task_context.model_dump(exclude={"metadata": {"nodes"}}))
                 task_context.metadata.pop("nodes", None)
 
             except Exception as e:
                 logging.error(f"Error in workflow execution: {str(e)}", exc_info=True)
+                workflow_span.update(level="ERROR", status_message=str(e))
                 yield {"type": "error", "error": str(e)}
                 raise
 
@@ -271,22 +272,3 @@ class Workflow(ABC):
         """
         next_node = router.route(task_context)
         return next_node.__class__ if next_node else None
-
-    def _set_span_input(self, span: Span, task_context: TaskContext):
-        span.set_attribute(
-            "input", task_context.model_dump_json(exclude={"metadata": {"nodes"}})
-        )
-
-    def _set_span_output(
-            self,
-            span: Span,
-            task_context: TaskContext,
-            current_node_class: Type[Node] = None,
-    ):
-        if current_node_class:
-            value = task_context.model_dump_json(
-                include={"nodes": {current_node_class.__name__}}
-            )
-        else:
-            value = task_context.model_dump_json(exclude={"metadata": {"nodes"}})
-        span.set_attribute("output", value)
