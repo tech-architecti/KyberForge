@@ -6,9 +6,10 @@ from contextlib import contextmanager
 from typing import Dict, Optional, ClassVar, Type, Any, AsyncIterator
 
 from dotenv import load_dotenv
+from langfuse import get_client
 from opentelemetry.sdk.trace import Span
 
-from core.langfuse_config import LangfuseConfig
+from core.exceptions import LangfuseAuthenticationError
 from core.nodes.agent_streaming_node import AgentStreamingNode
 from core.nodes.base import Node
 from core.nodes.router import BaseRouter
@@ -23,6 +24,7 @@ This module implements the core workflow functionality.
 It provides a flexible framework for defining and executing workflows with multiple
 nodes and routing logic.
 """
+load_dotenv()
 
 
 class Workflow(ABC):
@@ -55,8 +57,14 @@ class Workflow(ABC):
         self.validator = WorkflowValidator(self.workflow_schema)
         self.validator.validate()
         self.nodes: Dict[Type[Node], NodeConfig] = self._initialize_nodes()
-        self.tracer = LangfuseConfig.get_tracer()
-        load_dotenv()
+
+        langfuse = get_client()
+        if langfuse.auth_check():
+            self.langfuse = langfuse
+        else:
+            raise LangfuseAuthenticationError(
+                "Failed to authenticate with Langfuse. Check your LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY."
+            )
 
     @contextmanager
     def node_context(self, node_name: str):
@@ -126,7 +134,7 @@ class Workflow(ABC):
         task_context = TaskContext(event=event)
 
         with self.tracer.start_as_current_span(
-            self.__class__.__name__
+                self.__class__.__name__
         ) as workflow_span:
             try:
                 logging.info("Starting workflow streaming execution")
@@ -152,7 +160,7 @@ class Workflow(ABC):
                     node_name = current_node_class.__name__
 
                     with self.tracer.start_as_current_span(
-                        current_node_class.__name__
+                            current_node_class.__name__
                     ) as node_span:
                         self._set_span_input(node_span, task_context)
                         with self.node_context(node_name):
@@ -163,7 +171,7 @@ class Workflow(ABC):
                                 if isinstance(node_instance, AgentStreamingNode):
                                     # if hasattr(node_instance, "process_stream"):
                                     async for stream_event in node_instance.process(
-                                        task_context
+                                            task_context
                                     ):
                                         yield stream_event
 
@@ -224,7 +232,7 @@ class Workflow(ABC):
         return task_context
 
     async def _get_next_node_class(
-        self, current_node_class: Type[Node], task_context: TaskContext
+            self, current_node_class: Type[Node], task_context: TaskContext
     ) -> Optional[Type[Node]]:
         """Determines the next node to execute in the workflow.
 
@@ -250,7 +258,7 @@ class Workflow(ABC):
         return node_config.connections[0]
 
     async def _handle_router(
-        self, router: BaseRouter, task_context: TaskContext
+            self, router: BaseRouter, task_context: TaskContext
     ) -> Optional[Type[Node]]:
         """Handles routing logic for router nodes.
 
@@ -270,10 +278,10 @@ class Workflow(ABC):
         )
 
     def _set_span_output(
-        self,
-        span: Span,
-        task_context: TaskContext,
-        current_node_class: Type[Node] = None,
+            self,
+            span: Span,
+            task_context: TaskContext,
+            current_node_class: Type[Node] = None,
     ):
         if current_node_class:
             value = task_context.model_dump_json(
