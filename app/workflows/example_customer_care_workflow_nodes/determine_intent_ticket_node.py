@@ -46,7 +46,7 @@ class DetermineTicketIntentNode(AgentNode):
             output_type=self.OutputType,
             deps_type=self.DepsType,
             model_provider=ModelProvider.OPENAI,
-            model_name="gpt-4o",
+            model_name="gpt-4.1-mini",
         )
 
     async def process(self, task_context: TaskContext) -> TaskContext:

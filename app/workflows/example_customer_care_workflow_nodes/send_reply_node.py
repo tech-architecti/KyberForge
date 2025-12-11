@@ -2,9 +2,7 @@ import logging
 
 from core.nodes.base import Node
 from core.task import TaskContext
-from workflows.customer_care_workflow_nodes.generate_response_node import (
-    GenerateResponseNode,
-)
+from workflows.example_customer_care_workflow_nodes.generate_response_node import GenerateResponseNode
 
 
 class SendReplyNode(Node):
