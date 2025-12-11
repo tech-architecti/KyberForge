@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 from abc import ABC
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from typing import Dict, Optional, ClassVar, Type, Any, AsyncIterator
 
 from dotenv import load_dotenv
@@ -24,6 +24,13 @@ It provides a flexible framework for defining and executing workflows with multi
 nodes and routing logic.
 """
 load_dotenv()
+
+
+class NoOpSpan:
+    """No-op span that ignores all update calls."""
+
+    def update(self, **kwargs):
+        pass
 
 
 class Workflow(ABC):
@@ -51,19 +58,33 @@ class Workflow(ABC):
 
     workflow_schema: ClassVar[WorkflowSchema]
 
-    def __init__(self):
-        """Initializes the workflow by validating schema and creating nodes."""
+    def __init__(self, enable_tracing: bool = False):
+        """Initializes the workflow by validating schema and creating nodes.
+
+        Args:
+            enable_tracing: Whether to enable Langfuse tracing. Defaults to True.
+        """
         self.validator = WorkflowValidator(self.workflow_schema)
         self.validator.validate()
         self.nodes: Dict[Type[Node], NodeConfig] = self._initialize_nodes()
+        self.enable_tracing = enable_tracing
 
-        langfuse = get_client()
-        if langfuse.auth_check():
-            self.langfuse = langfuse
+        if enable_tracing:
+            langfuse = get_client()
+            if langfuse.auth_check():
+                self.langfuse = langfuse
+            else:
+                raise LangfuseAuthenticationError(
+                    "Failed to authenticate with Langfuse. Check your LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY."
+                )
         else:
-            raise LangfuseAuthenticationError(
-                "Failed to authenticate with Langfuse. Check your LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY."
-            )
+            self.langfuse = None
+
+    def _observation_context(self, name: str):
+        """Returns a tracing context manager or no-op based on enable_tracing."""
+        if self.enable_tracing and self.langfuse:
+            return self.langfuse.start_as_current_observation(as_type="span", name=name)
+        return nullcontext(NoOpSpan())
 
     @contextmanager
     def node_context(self, node_name: str):
@@ -132,10 +153,7 @@ class Workflow(ABC):
         """Executes the workflow with streaming support, yielding events as they occur."""
         task_context = TaskContext(event=event)
 
-        with self.langfuse.start_as_current_observation(
-            as_type="span",
-            name=self.__class__.__name__
-        ) as workflow_span:
+        with self._observation_context(self.__class__.__name__) as workflow_span:
             try:
                 logging.info("Starting workflow streaming execution")
 
@@ -147,7 +165,6 @@ class Workflow(ABC):
                 )
 
                 task_context.metadata["nodes"] = self.nodes
-                task_context.metadata["workflow_start_time"] = time.time()
                 current_node_class = self.workflow_schema.start
                 logging.info(f"Starting with node: {current_node_class.__name__}")
 
@@ -159,10 +176,7 @@ class Workflow(ABC):
                     current_node = self.nodes[current_node_class].node
                     node_name = current_node_class.__name__
 
-                    with self.langfuse.start_as_current_observation(
-                        as_type="span",
-                        name=node_name
-                    ) as node_span:
+                    with self._observation_context(node_name) as node_span:
                         node_span.update(input=task_context.model_dump(exclude={"metadata": {"nodes"}}))
 
                         with self.node_context(node_name):
@@ -209,10 +223,7 @@ class Workflow(ABC):
         """
         task_context = TaskContext(event=event)
 
-        with self.langfuse.start_as_current_observation(
-            as_type="span",
-            name=self.__class__.__name__
-        ) as workflow_span:
+        with self._observation_context(self.__class__.__name__) as workflow_span:
             try:
                 # Parse the raw event to the Pydantic schema defined in the WorkflowSchema
                 task_context.event = self.workflow_schema.event_schema(**event)
@@ -229,10 +240,7 @@ class Workflow(ABC):
                     current_node = self.nodes[current_node_class].node
                     node_name = current_node_class.__name__
 
-                    with self.langfuse.start_as_current_observation(
-                        as_type="span",
-                        name=node_name
-                    ) as node_span:
+                    with self._observation_context(node_name) as node_span:
                         node_span.update(input=task_context.model_dump(exclude={"metadata": {"nodes"}}))
 
                         with self.node_context(node_name):
