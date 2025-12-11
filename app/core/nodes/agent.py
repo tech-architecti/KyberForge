@@ -92,6 +92,8 @@ class AgentNode(Node, ABC):
             instrument=agent_wrapper.instrument,
         )
 
+        self.agent.instrument_all()
+
     @abstractmethod
     def get_agent_config(self) -> AgentConfig:
         pass
