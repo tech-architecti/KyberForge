@@ -3,7 +3,7 @@ from typing import AsyncIterator, Dict, Any
 from core.nodes.agent import AgentConfig, ModelProvider
 from core.nodes.agent_streaming_node import AgentStreamingNode
 from core.task import TaskContext
-from schemas.streaming_schema import StreamingSchema
+from schemas.streaming_example_schema import StreamingExampleSchema
 
 
 class StructuredStreamingNode(AgentStreamingNode):
@@ -19,7 +19,7 @@ class StructuredStreamingNode(AgentStreamingNode):
         )
 
     async def process(self, task_context: TaskContext) -> AsyncIterator[Dict[str, Any]]:
-        event: StreamingSchema = task_context.event
+        event: StreamingExampleSchema = task_context.event
         async with self.agent.run_stream(user_prompt=event.message) as result:
             async for chunk in self.stream_structured_deltas(result):
                 yield chunk

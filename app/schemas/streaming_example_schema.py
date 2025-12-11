@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class StreamingSchema(BaseModel):
+class StreamingExampleSchema(BaseModel):
     message: str
