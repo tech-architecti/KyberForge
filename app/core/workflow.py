@@ -1,3 +1,10 @@
+"""
+Workflow Orchestration Module
+
+This module implements the core workflow functionality.
+It provides a flexible framework for defining and executing workflows with multiple
+nodes and routing logic.
+"""
 import asyncio
 import logging
 from abc import ABC
@@ -15,13 +22,6 @@ from core.schema import WorkflowSchema, NodeConfig
 from core.task import TaskContext
 from core.validate import WorkflowValidator
 
-"""
-Workflow Orchestration Module
-
-This module implements the core workflow functionality.
-It provides a flexible framework for defining and executing workflows with multiple
-nodes and routing logic.
-"""
 load_dotenv()
 
 
@@ -29,6 +29,7 @@ class NoOpSpan:
     """No-op span that ignores all update calls."""
 
     def update(self, **kwargs):
+        """Accepts and ignores all keyword arguments for compatibility with real spans."""
         pass
 
 
@@ -61,7 +62,7 @@ class Workflow(ABC):
         """Initializes the workflow by validating schema and creating nodes.
 
         Args:
-            enable_tracing: Whether to enable Langfuse tracing. Defaults to True.
+            enable_tracing: Whether to enable Langfuse tracing. Defaults to False.
         """
         self.validator = WorkflowValidator(self.workflow_schema)
         self.validator.validate()
@@ -80,7 +81,15 @@ class Workflow(ABC):
             self.langfuse = None
 
     def _observation_context(self, name: str):
-        """Returns a tracing context manager or no-op based on enable_tracing."""
+        """Returns a tracing context manager or no-op based on enable_tracing.
+
+        Args:
+            name: The name for the tracing span.
+
+        Returns:
+            A context manager that yields a Langfuse span if tracing is enabled,
+            or a NoOpSpan otherwise.
+        """
         if self.enable_tracing and self.langfuse:
             return self.langfuse.start_as_current_observation(as_type="span", name=name)
         return nullcontext(NoOpSpan())
@@ -135,21 +144,46 @@ class Workflow(ABC):
         return node_class()
 
     def run(self, event: Any) -> TaskContext:
-        """Executes the workflow for a given event.
+        """Executes the workflow for a given event synchronously.
 
-        Use this when you want to run the workflow in a new event loop for example in a Celery background task, or a plain Python script.
+        Use this when you want to run the workflow in a new event loop,
+        for example in a Celery background task or a plain Python script.
+
+        Args:
+            event: The event data to process through the workflow.
+
+        Returns:
+            TaskContext containing the results of workflow execution.
         """
         return asyncio.run(self.__run(event))
 
     async def run_async(self, event: Any) -> TaskContext:
-        """Executes the workflow for a given event.
+        """Executes the workflow for a given event asynchronously.
 
-        Use this when you want to run the workflow in an active event loop for example in a FastAPI endpoint, or Jupyter Notebook.
+        Use this when you want to run the workflow in an active event loop,
+        for example in a FastAPI endpoint or Jupyter Notebook.
+
+        Args:
+            event: The event data to process through the workflow.
+
+        Returns:
+            TaskContext containing the results of workflow execution.
         """
         return await self.__run(event)
 
     async def run_stream_async(self, event: Any) -> AsyncIterator[Dict[str, Any]]:
-        """Executes the workflow with streaming support, yielding events as they occur."""
+        """Executes the workflow with streaming support, yielding events as they occur.
+
+        Args:
+            event: The event data to process through the workflow.
+
+        Yields:
+            Dict containing streaming events with type and data fields.
+            Error events have type "error" with an "error" field.
+
+        Raises:
+            Exception: Re-raises any exception that occurs during workflow execution.
+        """
         task_context = TaskContext(event=event)
 
         with self._observation_context(self.__class__.__name__) as workflow_span:
