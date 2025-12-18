@@ -1,6 +1,5 @@
 import json
 from http import HTTPStatus
-from typing import Dict, Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -9,7 +8,6 @@ from starlette.responses import Response
 from database.event import Event
 from database.repository import GenericRepository
 from database.session import db_session
-from schemas.example_customer_care_schema import CustomerCareEventSchema
 from worker.config import celery_app
 from workflows.workflow_registry import WorkflowRegistry
 
@@ -18,7 +16,7 @@ router = APIRouter()
 
 @router.post("/", dependencies=[])
 def handle_event(
-    data: CustomerCareEventSchema,
+    data: dict,
     session: Session = Depends(db_session),
 ) -> Response:
     """Handles incoming event submissions.

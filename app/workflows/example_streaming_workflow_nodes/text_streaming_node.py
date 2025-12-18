@@ -9,8 +9,8 @@ from schemas.openai_schema import OpenAIChatSchema
 class TextStreamingNode(AgentStreamingNode):
     def get_agent_config(self) -> AgentConfig:
         return AgentConfig(
-            model_provider=ModelProvider.MISTRAL,
-            model_name="mistral-small-2506",
+            model_provider=ModelProvider.OPENAI,
+            model_name="gpt-4.1",
             output_type=str,
         )
 

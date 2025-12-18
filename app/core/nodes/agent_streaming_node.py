@@ -36,7 +36,7 @@ class AgentStreamingNode(AgentNode, ABC):
         stream_result,
         debounce_by: float = 0.01,
     ):
-        async for chunk in stream_result.stream(debounce_by=debounce_by):
+        async for chunk in stream_result.stream_output(debounce_by=debounce_by):
             if chunk.model_dump():
                 yield self.completion_chunk(chunk.model_dump())
 
