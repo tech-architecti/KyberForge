@@ -1,98 +1,110 @@
-# GenAI Launchpad
+# KyberForge
 
-With AI innovation moving beyond the speed of light, your time to develop is now more precious than ever. That’s why
-we’ve built the GenAI Launchpad – your secret weapon to shipping production-ready AI apps, faster.
+[![License](https://img.shields.io/badge/License-Qubit%2C%20LLC-blue.svg)](LICENCE)
+[![Python](https://img.shields.io/badge/python-3.12.6-blue.svg)](https://www.python.org/downloads/)
+[![Conda](https://img.shields.io/badge/conda-environment-green.svg)](https://docs.conda.io/en/latest/)
 
-## 🚀 Introduction
+KyberForge is an advanced AI-driven Network Engineering and Architecture Support system. It gives network engineers
+AI-powered design, optimization, troubleshooting, and security implementation — built on a Docker-based GenAI
+infrastructure that's production-ready from day one.
 
-Welcome to the GenAI Launchpad – your all-in-one repository for building powerful, scalable Generative AI applications.
-Whether you’re prototyping or deploying at scale, this Docker-based setup has you covered with everything from
-event-driven architecture to seamless AI workflow integration.
+## Introduction
 
-No need to start from scratch or waste time on repetitive configurations. The GenAI Launchpad is engineered to get you
-up and running fast, with a flexible design that fits your workflow – all while keeping things production-ready from day
-one.
+KyberForge brings AI to the network engineering workflow — from initial topology design through troubleshooting and
+security hardening. Instead of assembling infrastructure from scratch, you get a containerized system with an
+event-driven pipeline engine, background task processing, and built-in support for LLM integration and vector search.
 
-> **Note**: This repository has two main branches:
-> - [`main`](https://github.com/datalumina/genai-launchpad/tree/main): A stripped-down version with just the core
-    components, perfect for starting new projects.
-> - [`quickstart`](https://github.com/datalumina/genai-launchpad/tree/boilerplate): Contains a complete example
-    implementation to demonstrate the Launchpad's capabilities
->
-> We recommend following the Accelerator Course first to understand the example implementation in the `quickstart` branch.
+The architecture is modular and extension-ready. Define a new pipeline, wire it into the registry, and KyberForge
+handles routing, task execution, and persistence. The infrastructure adapts to your use case, not the other way around.
 
-## 🎯 Overview
+## Overview
 
-The GenAI Launchpad isn’t just another framework – it’s your shortcut to a production-ready AI infrastructure. Built for
-speed and control, its modular architecture brings together the best tools and design patterns to help you deploy faster
-without compromising flexibility.
+KyberForge runs on a proven stack designed for production AI workloads:
 
-Here’s what you’re working with:
+- **FastAPI** for the API layer — event ingestion, routing, and validation
+- **Celery** for background task processing — pipeline execution runs asynchronously
+- **PostgreSQL** for persistent storage, including embeddings
+- **Redis** for task queue management
+- **Caddy** for reverse proxy and automatic HTTPS
+- **Alembic** for database migrations
+- **Jinja2** for prompt templates
 
-- FastAPI for lightning-fast API development
-- Celery for background task processing
-- PostgreSQL to handle all your data, includding embeddings
-- Redis for fast task queue management
-- Caddy for reverse proxy and automatic HTTPS
+All services are containerized with Docker. An event arrives via the API, gets dispatched to the pipeline registry,
+and Celery picks it up for processing. Pipeline steps can invoke LLMs, query the vector store, or apply prompt
+templates — results persist to PostgreSQL.
 
-All services are containerized using Docker, ensuring consistency across development and deployment environments.
+## Key Features
 
-## ⭐ Key Features
+- **Network Design Assistant**: Create and optimize network architectures using the pipeline engine and LLM integration.
+- **Technology Insight Engine**: Surface up-to-date networking best practices through retrieval-augmented generation
+  (RAG) and the vector store.
+- **Troubleshooting AI**: Run diagnostic pipelines that isolate and resolve complex network issues step by step.
+- **Security Implementation Guide**: Generate security recommendations grounded in your actual network architecture.
+- **Automation Scripts**: Customizable scripts for repeatable network operations.
+- **Event-Driven Architecture**: A pipeline registry routes incoming events to the correct processing pipeline
+  automatically — no manual dispatch.
+- **Playground**: Sandbox environment for testing pipelines, prompts, RAG workflows, and LLM configurations in
+  isolation from production.
+- **Production-Ready Deployment**: Docker-based containerization with Caddy reverse proxy, ready for real environments.
 
-- **Event-Driven Architecture**: Built-in support for designing and implementing event-driven systems.
-- **AI Workflow Support**: Pre-configured setup for integrating AI models and workflows.
-- **Scalability**: Designed with scalability in mind, allowing easy expansion as your application grows.
-- **Flexibility**: Modular architecture that allows for easy customization and extension.
-- **Production-Ready**: Includes essential components for a production environment, including logging, monitoring, and
-  security features.
-- **Rapid Development**: Boilerplate code and project structure to accelerate development.
-- **Docker-Based Deployment**: Complete Docker-based strategy for straightforward deployment.
-- **Supabase**: Full self-hosted Supabase included.
+## Quick Start
 
-## 📚 Documentation
+```python
+from kyberforge.models import NetworkDesign
 
-The docs can be found at:
-https://launchpad.datalumina.com/
+# Initialize and create a redundant topology
+network = NetworkDesign()
+topology = network.create_topology(nodes=5, redundancy=True)
 
-## 🏗️ Project Structure
+# Run a security analysis against the topology
+security_score = network.analyze_security(topology)
+```
 
-The Launchpad follows a logical, scalable, and reasonably standardized project structure for building event-driven GenAI
-apps.
+For full installation and setup instructions, see the [Installation guide](docs/installation.md).
+
+## Documentation
+
+Full documentation is available in the [`docs/`](docs/) directory, covering:
+
+- [Installation](docs/installation.md)
+- [Usage](docs/usage.md)
+- [API Reference](docs/api_reference.md)
+- [Deployment](docs/deployment.md)
+
+## Project Structure
+
+KyberForge follows a modular, event-driven project structure:
 
 ```text
 ├── app
-│   ├── alembic            # Database migration scripts
-│   ├── api                # API endpoints and routers
-│   ├── worker             # Background task definitions
-│   ├── core               # Components for workflow and task processing
-│   ├── database           # Database models and utilities
-│   ├── prompts            # Prompt templates for AI models
-│   ├── schemas            # Event schemas
-│   ├── services           # Business logic and services
-│   ├── workflows          # AI workflow definitions
-├── docker                 # Docker configuration files
-├── playground             # Run experiments for workflow design
-└── requests               # Event definitions and handlers
+│   ├── alembic/          # Database migration scripts
+│   ├── api/              # API endpoints, routing, and event schemas
+│   ├── config/           # Celery, database, LLM, and application settings
+│   ├── core/             # Base classes, LLM core, pipeline engine, validation
+│   ├── database/         # Models, repositories, sessions, event persistence
+│   ├── pipelines/        # AI pipeline definitions (customer, internal)
+│   ├── prompts/          # Jinja2 prompt templates
+│   ├── services/         # LLM factory, prompt loader, vector store
+│   ├── tasks/            # Celery task definitions
+│   └── utils/            # Event factory, vector insertion, pipeline visualization
+├── data/                 # Datasets
+├── docker/               # Docker configs, Caddyfile, Compose
+├── docs/                 # Documentation
+├── playground/           # Experimentation sandbox and tests
+└── requests/             # Event definitions and sender scripts
 ```
 
-## 💬 Support
+## Support
 
-For support, questions, and collaboration related to the GenAI Launchpad:
+For questions, bug reports, and collaboration:
 
-1. **Discord Community**: Join our [Discord server](https://discord.gg/H67KUD6vXe) for quick questions, real-time
-   support, and feature discussions. This is the fastest way to get help and connect with other users.
+- **GitHub Issues**: Open an issue on the [KyberForge repository](https://github.com/tech-architecti/KyberForge/issues)
+  for bugs, feature requests, and technical questions.
+- **Email**: For private inquiries, reach us at [info@techarchitecti.com](mailto:info@techarchitecti.com).
 
-2. **GitHub Issues**: For bug reports and technical problems, please open an issue on
-   our [GitHub repository](https://github.com/datalumina/genai-launchpad/issues). This helps us track issues
-   systematically and builds a searchable knowledge base for the community.
+## License
 
-3. **Email**: For private inquiries or matters that don't fit Discord or GitHub, you can reach us at
-   launchpad@datalumina.com. However, we encourage using Discord or GitHub for most support needs to benefit the entire
-   community.
-
-## ⚖️ License
-
-This project is licensed under the DATALUMINA License. See the [LICENSE](/LICENSE) file for details.
+This project is licensed under the Qubit, LLC License. See the [LICENSE](LICENCE) file for details.
 
 ### Key Points
 
@@ -102,9 +114,8 @@ This project is licensed under the DATALUMINA License. See the [LICENSE](/LICENS
   itself.
 - The software is provided "AS IS", without warranty of any kind.
 
-For the full license text, please refer to the [LICENSE](/LICENSE) file in the repository.
+For the full license text, refer to the [LICENSE](LICENCE) file in the repository.
 
 ---
 
-For further assistance or to contribute to the GenAI Launchpad, please consult the project maintainers or refer to the
-contribution guidelines.
+See [Code of Conduct](CODE_OF_CONDUCT.md) and [Governance](GOVERNANCE.md) for contribution and project guidelines.
