@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+authors:
+  - family-names: "Jimenez"
+    given-names: "Aldo E"
+    affiliation: "Tech Architecti"
+    orcid: "https://orcid.org/0009-0003-3790-1611"
+title: "KyberForge: AI-Powered Network Engineering and Architecture Support"
+version: 1.0.0
+date-released: "2024-03-01"
+url: "https://github.com/tech-architecti/KyberForge"
+repository-code: "https://github.com/tech-architecti/KyberForge"
+license: LicenseRef-Qubit-LLC
+license-url: "https://github.com/tech-architecti/KyberForge/blob/main/LICENSE"
+keywords:
+  - network engineering
+  - AI
+  - architecture support
+  - automation
+references:
+  - type: software
+    title: "GenAI Launchpad"
+    authors:
+      - name: "Datalumina Solutions B.V."
+    repository-code: "https://github.com/datalumina/genai-launchpad"
+    date-released: 2024
+    license: LicenseRef-Datalumina
+    license-url: "https://github.com/datalumina/genai-launchpad/blob/main/LICENSE"

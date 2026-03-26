@@ -108,10 +108,10 @@ This project is licensed under the Qubit, LLC License. See the [LICENSE](LICENCE
 
 ### Key Points
 
-- You are free to use this code for personal or commercial projects, including client work.
-- You can modify and build upon the code.
-- You cannot resell or distribute this code as a template or part of a package where the primary value is in the code
-  itself.
+- You can use KyberForge for your own internal business operations.
+- You can modify and expand the code to fit your internal needs.
+- You cannot use KyberForge to build products or services for third parties.
+- You cannot resell or redistribute this code as a template, package, or course.
 - The software is provided "AS IS", without warranty of any kind.
 
 For the full license text, refer to the [LICENSE](LICENCE) file in the repository.

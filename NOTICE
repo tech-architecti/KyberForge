@@ -1,0 +1,17 @@
+Third-Party Software Notices
+============================
+
+KyberForge incorporates code from the following third-party project:
+
+GenAI Launchpad
+  Copyright (c) 2024 Datalumina Solutions B.V.
+  License: DATALUMINA Launchpad License Agreement (Proprietary)
+  Repository: https://github.com/datalumina/genai-launchpad
+
+  KyberForge's foundational infrastructure — including the FastAPI API layer, Celery
+  background task processing, PostgreSQL database integration, Redis task queue, Caddy
+  reverse proxy, Docker containerization, Alembic migrations, and the event-driven
+  architecture pattern — is derived from the GenAI Launchpad.
+
+  Components originating from the GenAI Launchpad remain subject to their original
+  license terms. See the GenAI Launchpad repository for details.
