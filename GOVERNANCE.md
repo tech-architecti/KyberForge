@@ -58,17 +58,18 @@ This project includes the following roles:
 ## 5. Version Control
 
 5.1. The project follows the [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/) branching strategy:
-   - `main` branch contains production code
-   - `develop` branch contains development code
-   - Feature branches are created from `develop`
-   - Release branches are created from `develop`
-   - Hotfix branches are created from `main`
+
+- `main` contains production-ready code
+- `develop` contains integration/development code
+- Feature branches are created from `develop` and merged back into `develop`
+- Release branches are created from `develop`, then merged into `main` and back into `develop` when finished
+- Hotfix branches are created from `main`, then merged into both `main` and `develop`
 
 5.2. Branch naming convention:
-   - Feature branches: `feature/description`
-   - Bug fix branches: `fix/description`
-   - Release branches: `release/version`
-   - Hotfix branches: `hotfix/description`
+   - Feature branches: `name/feature/description`
+   - Bug fix branches: `name/fix/kyb1234-description`
+   - Release branches: `release/version` i.e. `release/1.2.0`
+   - Hotfix branches: `hotfix/kyb1234-description`
 
 ## 6. Changes to this Governance Document
 
