@@ -88,12 +88,27 @@ target/
 
 # Virtual environment
 .venv/
+env/
 
 # Alembic migrations
 app/alembic/versions/*
 !app/alembic/versions/.gitkeep
 
-# Launchpad playground
+# Playground
 playground/*.png
 
 app/google-service-account.json
+
+# Conda environment
+conda-env/
+.conda/
+environment.yml
+
+# Version folders
+v0/
+**/v0/
+
+# Project specific (Optional)
+# /models/
+# /archive/
+# /data/
