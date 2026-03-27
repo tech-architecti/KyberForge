@@ -6,11 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development Environment
 ```bash
-# Set up conda environment
+# Create conda environment (conda-forge packages + pip fallbacks)
 conda env create -f environment.yml
 conda activate kyberforge
+
+# Install the project in editable mode
 pip install -e .
+
+# Verify no dependency conflicts
+pip check
 ```
+
+> **Note:** Most dependencies are installed via conda (conda-forge channel).
+> `langfuse`, `pydantic-ai`, and `python-frontmatter` are installed via pip
+> because they are not available on conda-forge. See `environment.yml` for details.
 
 ### Running the Application
 ```bash

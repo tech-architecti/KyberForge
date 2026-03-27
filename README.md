@@ -47,6 +47,32 @@ templates — results persist to PostgreSQL.
   isolation from production.
 - **Production-Ready Deployment**: Docker-based containerization with Caddy reverse proxy, ready for real environments.
 
+## Installation
+
+### Conda (recommended)
+
+```bash
+# Create the environment (uses conda-forge + pip fallbacks)
+conda env create -f environment.yml
+conda activate kyberforge
+
+# Install the project in editable mode
+pip install -e .
+```
+
+### pip only
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+```
+
+### Docker
+
+```bash
+cd docker && ./start.sh
+```
+
 ## Quick Start
 
 ```python
